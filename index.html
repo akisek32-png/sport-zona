@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPORT ZONA | Sportski portal</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f2f6fc;color:#14294b}
+header{background:#092957;color:white;padding:22px 6%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.logo{font-size:27px;font-weight:900}
+.logo span{color:#62aaff}
+nav{background:#12447f;padding:13px 5%;display:flex;gap:20px;flex-wrap:wrap}
+nav a{color:white;text-decoration:none;font-weight:bold}
+.hero{background:linear-gradient(120deg,#092957,#1764b5);color:white;padding:38px 6%}
+.hero h1{font-size:36px;margin:0 0 10px}
+.container{max-width:1150px;margin:25px auto;padding:0 16px}
+h2{color:#103d75;border-bottom:3px solid #3986d9;padding-bottom:10px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+button{border:0;background:#dceaff;color:#12447f;padding:11px 16px;border-radius:7px;font-weight:bold;cursor:pointer}
+button.active,button:hover{background:#12447f;color:white}
+.card{background:white;padding:17px;border-radius:12px;margin:12px 0;box-shadow:0 3px 12px #153b6810}
+.match{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.score{font-size:23px;font-weight:bold;color:#1459a5}
+.status{font-size:12px;color:#167b4a;font-weight:bold}
+.small{font-size:13px;color:#718096}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.news-grid a{color:#16477e;text-decoration:none;font-weight:bold}
+footer{background:#092957;color:white;text-align:center;padding:25px;margin-top:45px}
+#message{color:#65758c}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">SPORT <span>ZONA</span></div>
+ <div>⚡ Sportski portal</div>
+</header>
+<nav>
+ <a href="#rezultati">Rezultati</a>
+ <a href="#vesti">Vesti</a>
+ <a href="#sportovi">Sportovi</a>
+ <a href="#raspored">Raspored</a>
+</nav>
+<section class="hero">
+ <h1>SPORT ZONA</h1>
+ <p>Sve sportske vesti, rezultati i uzbuđenja na jednom mestu!</p>
+ <strong>🔵 REZULTATI I SPORTSKE VESTI</strong>
+</section>
+<main class="container">
+ <section id="rezultati">
+  <h2>🔴 Rezultati uživo</h2>
+  <p class="small">Podaci se preuzimaju iz ESPN sportskog servisa.</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="scores"><p id="message">Učitavanje rezultata...</p></div>
+ </section>
+ <section id="vesti">
+  <h2>📰 Najnovije sportske vesti</h2>
+  <div id="news" class="news-grid">
+   <p>Učitavanje vesti...</p>
+  </div>
+ </section>
+ <section id="sportovi">
+  <h2>🏆 Svi sportovi</h2>
+  <div class="news-grid">
+   <div class="card">⚽ Fudbal</div>
+   <div class="card">🏀 Košarka</div>
+   <div class="card">🎾 Tenis</div>
+   <div class="card">🏐 Odbojka</div>
+   <div class="card">🤾 Rukomet</div>
+   <div class="card">🏎️ Formula 1</div>
+   <div class="card">🏒 Hokej</div>
+   <div class="card">🥊 Borilački sportovi</div>
+  </div>
+ </section>
+ <section id="raspored">
+  <h2>📅 Raspored</h2>
+  <p>Izaberite sport iz menija Rezultati da vidite utakmice i njihove termine.</p>
+ </section>
+</main>
+<footer>
+ <div class="logo">SPORT <span>ZONA</span></div>
+ <p>© 2026 SPORT ZONA | Sportski portal</p>
+ <p>Besplatno na GitHub Pages</p>
+</footer>
+<script>
+const sports=[
+ {name:"Fudbal - Engleska",sport:"soccer",league:"eng.1"},
+ {name:"Fudbal - Španija",sport:"soccer",league:"esp.1"},
+ {name:"Liga šampiona",sport:"soccer",league:"uefa.champions"},
+ {name:"Košarka - NBA",sport:"basketball",league:"nba"},
+ {name:"Košarka - WNBA",sport:"basketball",league:"wnba"},
+ {name:"Američki fudbal",sport:"football",league:"nfl"},
+ {name:"Hokej",sport:"hockey",league:"nhl"},
+ {name:"Bejzbol",sport:"baseball",league:"mlb"}
+];
+const tabs=document.getElementById("tabs");
+const scores=document.getElementById("scores");
+let selected=0;
+
+sports.forEach((s,i)=>{
+ const b=document.createElement("button");
+ b.textContent=s.name;
+ b.className=i===0?"active":"";
+ b.onclick=()=>{
+  selected=i;
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  loadScores();
+ };
+ tabs.appendChild(b);
+});
+
+async function loadScores(){
+ const s=sports[selected];
+ scores.innerHTML="<p>Učitavanje...</p>";
+ const url=`https://site.api.espn.com/apis/site/v2/sports/${s.sport}/${s.league}/scoreboard`;
+ try{
+  const r=await fetch(url);
+  if(!r.ok) throw new Error("Greška");
+  const data=await r.json();
+  const events=data.events||[];
+  if(!events.length){
+   scores.innerHTML="<div class='card'>Trenutno nema dostupnih utakmica za ovaj izbor. Proverite ponovo kasnije.</div>";
+   return;
+  }
+  scores.innerHTML="";
+  events.forEach(event=>{
+   const comp=event.competitions?.[0];
+   const teams=comp?.competitors||[];
+   const home=teams.find(t=>t.homeAway==="home")||teams[0];
+   const away=teams.find(t=>t.homeAway==="away")||teams[1];
+   const status=event.status?.type?.shortDetail||"Termin nije dostupan";
+   const live=event.status?.type?.state==="in";
+   const div=document.createElement("div");
+   div.className="card";
+   div.innerHTML=`
+    <div class="small">${event.name||s.name}</div>
+    <div class="match">
+     <strong>${home?.team?.displayName||"Tim 1"}</strong>
+     <span class="score">${home?.score??"-"} : ${away?.score??"-"}</span>
+     <strong>${away?.team?.displayName||"Tim 2"}</strong>
+    </div>
+    <div class="status">${live?"🔴 UŽIVO":status}</div>`;
+   scores.appendChild(div);
+  });
+ }catch(e){
+  scores.innerHTML="<div class='card'>Rezultati trenutno nisu dostupni. Pokušajte ponovo kasnije.</div>";
+ }
+}
+
+async function loadNews(){
+ const news=document.getElementById("news");
+ try{
+  const r=await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/news");
+  if(!r.ok) throw new Error();
+  const data=await r.json();
+  const articles=data.articles||[];
+  news.innerHTML="";
+  articles.slice(0,8).forEach(a=>{
+   const div=document.createElement("div");
+   div.className="card";
+   const link=document.createElement("a");
+   link.href=a.links?.web?.href||"#";
+   link.target="_blank";
+   link.rel="noopener";
+   link.textContent=a.headline||"Sportska vest";
+   const p=document.createElement("p");
+   p.className="small";
+   p.textContent=a.description||"Pročitajte najnoviju sportsku vest.";
+   div.append(link,p);
+   news.appendChild(div);
+  });
+  if(!articles.length) throw new Error();
+ }catch(e){
+  news.innerHTML="<div class='card'>Vesti trenutno nisu dostupne. Pogledajte <a href='https://www.espn.com/' target='_blank' rel='noopener'>ESPN sportske vesti</a>.</div>";
+ }
+}
+loadScores();
+loadNews();
+setInterval(loadScores,60000);
+</script>
+</body>
+</html>
